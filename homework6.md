@@ -122,14 +122,6 @@ mutate(log_betas = log10(intercept*tmin)) %>%
     ggplot(aes(x = log_betas)) + geom_density() + labs(x = "Log(Beta0*Beta1)", y = "Density")
 ```
 
-    ## Warning: Values in `estimate` are not uniquely identified; output will contain list-cols.
-    ## * Use `values_fn = list(estimate = list)` to suppress this warning.
-    ## * Use `values_fn = list(estimate = length)` to identify where the duplicates arise
-    ## * Use `values_fn = list(estimate = summary_fun)` to summarise duplicates
-
-    ## Warning: `cols` is now required.
-    ## Please use `cols = c(intercept, tmin)`
-
 ![](homework6_files/figure-gfm/bootstrapping%20and%20log%20betas%20plot-1.png)<!-- -->
 
 ##### The distribution is skewed slightly to the left, but appears relatively normal.
@@ -156,3 +148,36 @@ upper_CI = quantile(log_betas, c(.975))) %>%
 | lower\_CI | upper\_CI |
 | --------: | --------: |
 |    0.8535 |     0.895 |
+
+``` r
+  weather_df %>% 
+  modelr::bootstrap(n = 5000) %>% 
+  mutate(models = map(strap, ~ lm(tmax ~ tmin, data = .x)),
+    results = map(models, broom::glance)) %>% 
+  select(results) %>% 
+  unnest(results) %>% 
+  select(r.squared) %>% 
+  ggplot(aes(x = r.squared)) + geom_density() + labs(x = "R-Squared", y = "Density")
+```
+
+![](homework6_files/figure-gfm/bootstrapping%20and%20rsquared%20plot-1.png)<!-- -->
+
+##### Again, the distribution is skewed slightly to the left, but appears relatively normal.
+
+``` r
+  weather_df %>% 
+  modelr::bootstrap(n = 5000) %>% 
+  mutate(models = map(strap, ~ lm(tmax ~ tmin, data = .x)),
+    results = map(models, broom::glance)) %>% 
+  select(results) %>% 
+  unnest(results) %>% 
+  select(r.squared) %>% 
+summarize(
+lower_CI = quantile(r.squared, c(.025)),
+upper_CI = quantile(r.squared, c(.975))) %>% 
+  knitr::kable(digits = 4)
+```
+
+| lower\_CI | upper\_CI |
+| --------: | --------: |
+|    0.8942 |    0.9273 |

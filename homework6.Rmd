@@ -104,7 +104,7 @@ weather_df =
   select(name, id, everything())
 ```
 
-```{r, bootstrapping and log betas plot}
+```{r, bootstrapping and log betas plot, warning = FALSE, message = FALSE}
 set.seed(17)
 weather_df %>% 
   modelr::bootstrap(n = 5000) %>% 
@@ -143,3 +143,29 @@ upper_CI = quantile(log_betas, c(.975))) %>%
   knitr::kable(digits = 4)
 ```
 
+```{r, bootstrapping and rsquared plot, warning = FALSE, message = FALSE}
+  weather_df %>% 
+  modelr::bootstrap(n = 5000) %>% 
+  mutate(models = map(strap, ~ lm(tmax ~ tmin, data = .x)),
+    results = map(models, broom::glance)) %>% 
+  select(results) %>% 
+  unnest(results) %>% 
+  select(r.squared) %>% 
+  ggplot(aes(x = r.squared)) + geom_density() + labs(x = "R-Squared", y = "Density")
+```
+
+##### Again, the distribution is skewed slightly to the left, but appears relatively normal. 
+
+```{r, 95CI for rsquared, warning = FALSE, message = FALSE}
+  weather_df %>% 
+  modelr::bootstrap(n = 5000) %>% 
+  mutate(models = map(strap, ~ lm(tmax ~ tmin, data = .x)),
+    results = map(models, broom::glance)) %>% 
+  select(results) %>% 
+  unnest(results) %>% 
+  select(r.squared) %>% 
+summarize(
+lower_CI = quantile(r.squared, c(.025)),
+upper_CI = quantile(r.squared, c(.975))) %>% 
+  knitr::kable(digits = 4)
+```
